@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: openfeature-app
+  main:
+    web-application-type: servlet
+
+server:
+  port: 8080
+
+feature-flag:
+  provider: split
+  client-name: my-app
+  block-until-ready-timeout-ms: 10000
+  rest-api:
+    enabled: true
+  split:
+    api-key: ${SPLIT_API_KEY}
+  flagd:
+    host: localhost
+    port: 8013
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  health:
+    defaults:
+      enabled: true
+
+logging:
+  level:
+    io.harness.dbm.openfeature: INFO
+    dev.openfeature: DEBUG
+    # Set to INFO to see streaming status, WARN to suppress
+    io.split.engine.sse: WARN
+    io.split.engine.common: INFO
+    io.split.client: WARN
