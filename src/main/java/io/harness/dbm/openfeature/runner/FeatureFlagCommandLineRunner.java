@@ -1,8 +1,9 @@
 package io.harness.dbm.openfeature.runner;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.openfeature.sdk.EvaluationContext;
 import dev.openfeature.sdk.FlagEvaluationDetails;
-import dev.openfeature.sdk.MutableContext;
 import dev.openfeature.sdk.Value;
 import io.harness.dbm.openfeature.service.FeatureFlagService;
 import io.harness.dbm.openfeature.service.SplitManagementService;
@@ -23,6 +24,7 @@ public class FeatureFlagCommandLineRunner implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(FeatureFlagCommandLineRunner.class);
 
     private final FeatureFlagService featureFlagService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired(required = false)
     private SplitManagementService splitManagementService;
@@ -57,11 +59,55 @@ public class FeatureFlagCommandLineRunner implements CommandLineRunner {
         log.info("multivariant_demo: {}", stringValue);
 
         EvaluationContext ctx2 = featureFlagService.createContext("dmartin", null);
-        FlagEvaluationDetails<String> details = featureFlagService.getStringFlagDetails("multivariant_demo", "fallback", ctx2);
+
+        FlagEvaluationDetails<String> details =
+                featureFlagService.getStringFlagDetails("multivariant_demo", "fallback", ctx2);
+
         String dynamicConfig = details.getFlagMetadata().getString("config");
+
         log.info("multivariant_demo details - value: {}, reason: {}, dynamicConfig: {}",
-                 details.getValue(), details.getReason(), dynamicConfig);
+                details.getValue(), details.getReason(), dynamicConfig);
+
+        FlagEvaluationDetails<String> numDetails =
+                featureFlagService.getStringFlagDetails("openfeaturetest", "fallback", ctx2);
+
+        String numConfig = numDetails.getFlagMetadata().getString("config");
+
+        parseAndLogNumericConfig(numConfig);
 
         log.info("=== Feature Flag Demo Complete ===");
+    }
+
+    /**
+     * Handles numeric JSON values safely:
+     * - integers → long
+     * - decimals → double
+     * - non-numeric JSON → logged and ignored
+     */
+    private void parseAndLogNumericConfig(String json) {
+        if (json == null) {
+            log.info("config is null");
+            return;
+        }
+
+        try {
+            JsonNode node = objectMapper.readTree(json);
+
+            if (!node.isNumber()) {
+                log.info("config is not numeric. type={}", node.getNodeType());
+                return;
+            }
+
+            if (node.isIntegralNumber()) {
+                long value = node.longValue();
+                log.info("config is INTEGER: {}", value);
+            } else {
+                double value = node.doubleValue();
+                log.info("config is DOUBLE: {}", value);
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to parse config JSON: {}", json, e);
+        }
     }
 }

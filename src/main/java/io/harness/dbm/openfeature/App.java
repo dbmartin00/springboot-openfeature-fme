@@ -57,6 +57,8 @@ public class App
 		
 		MutableContext context = new MutableContext("c5");
 		context.add("row", "c");
+
+    System.out.println("DBM HERE");
 		
 		Boolean boolValue = client.getBooleanValue("new_onboarding", false, context);
 		System.out.println("new_onboarding: " + boolValue);
@@ -70,5 +72,10 @@ public class App
 		FlagEvaluationDetails<String> details = client.getStringDetails("multivariant_demo", "fallback", ctx);
 		String dynamicConfig = details.getFlagMetadata().getString("config");
 		System.out.println("dynamicConfig: " + dynamicConfig);
+
+    FlagEvaluationDetails<String> numDetails = client.getStringDetails("openfeaturetest", "fallback", ctx);
+    String numConfig = numDetails.getFlagMetadata().getString("config");
+    System.out.println("numConfig: " + numConfig);
+
     }
 }
