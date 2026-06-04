@@ -2,10 +2,14 @@ package io.harness.dbm.openfeature.controller;
 
 import dev.openfeature.sdk.EvaluationContext;
 import dev.openfeature.sdk.FlagEvaluationDetails;
+import dev.openfeature.sdk.MutableTrackingEventDetails;
 import dev.openfeature.sdk.Value;
 import io.harness.dbm.openfeature.service.FeatureFlagService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -81,5 +85,45 @@ public class FeatureFlagController {
         }
 
         return response;
+    }
+
+    @PostMapping("/track")
+    public ResponseEntity<String> trackEvent(
+            @RequestParam String eventName,
+            @RequestParam String targetingKey,
+            @RequestParam(required = false) String trafficType,
+            @RequestParam(required = false) Double value,
+            @RequestBody(required = false) Map<String, Object> properties) {
+
+        // Build context attributes from query params and request body
+        Map<String, Value> contextAttributes = new HashMap<>();
+        if (trafficType != null) {
+            contextAttributes.put("trafficType", new Value(trafficType));
+        } else if (properties != null && properties.containsKey("trafficType")) {
+            contextAttributes.put("trafficType", new Value(properties.get("trafficType").toString()));
+        } else {
+            contextAttributes.put("trafficType", new Value("user")); // Default
+        }
+
+        EvaluationContext context = featureFlagService.createContext(targetingKey, contextAttributes);
+
+        MutableTrackingEventDetails details = value != null
+                ? new MutableTrackingEventDetails(value)
+                : new MutableTrackingEventDetails();
+
+        if (properties != null) {
+            properties.forEach((key, val) -> {
+                // Skip trafficType as it's already in context
+                if (key.equals("trafficType")) return;
+
+                if (val instanceof String) details.add(key, (String) val);
+                else if (val instanceof Integer) details.add(key, (Integer) val);
+                else if (val instanceof Double) details.add(key, (Double) val);
+                else if (val instanceof Boolean) details.add(key, (Boolean) val);
+            });
+        }
+
+        featureFlagService.trackEvent(eventName, context, details);
+        return ResponseEntity.ok("Event tracked: " + eventName);
     }
 }

@@ -4,6 +4,7 @@ import dev.openfeature.sdk.Client;
 import dev.openfeature.sdk.EvaluationContext;
 import dev.openfeature.sdk.FlagEvaluationDetails;
 import dev.openfeature.sdk.MutableContext;
+import dev.openfeature.sdk.TrackingEventDetails;
 import dev.openfeature.sdk.Value;
 import io.harness.dbm.openfeature.config.FeatureFlagProperties;
 import org.slf4j.Logger;
@@ -116,6 +117,16 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
             return true;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    @Override
+    public void trackEvent(String eventName, EvaluationContext context, TrackingEventDetails details) {
+        try {
+            client.track(eventName, context, details);
+            log.info("Tracked event '{}' for context: {}", eventName, context.getTargetingKey());
+        } catch (Exception e) {
+            log.error("Error tracking event '{}'", eventName, e);
         }
     }
 }

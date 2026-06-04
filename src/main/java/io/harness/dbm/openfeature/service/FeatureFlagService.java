@@ -2,6 +2,7 @@ package io.harness.dbm.openfeature.service;
 
 import dev.openfeature.sdk.EvaluationContext;
 import dev.openfeature.sdk.FlagEvaluationDetails;
+import dev.openfeature.sdk.TrackingEventDetails;
 import dev.openfeature.sdk.Value;
 
 import java.util.Map;
@@ -21,4 +22,6 @@ public interface FeatureFlagService {
     EvaluationContext createContext(String targetingKey, Map<String, Value> attributes);
 
     boolean isReady();
+
+    void trackEvent(String eventName, EvaluationContext context, TrackingEventDetails details);
 }

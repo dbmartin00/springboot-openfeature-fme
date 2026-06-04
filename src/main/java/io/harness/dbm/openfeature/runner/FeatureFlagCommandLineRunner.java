@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.openfeature.sdk.EvaluationContext;
 import dev.openfeature.sdk.FlagEvaluationDetails;
+import dev.openfeature.sdk.MutableTrackingEventDetails;
 import dev.openfeature.sdk.Value;
 import io.harness.dbm.openfeature.service.FeatureFlagService;
 import io.harness.dbm.openfeature.service.SplitManagementService;
@@ -74,6 +75,25 @@ public class FeatureFlagCommandLineRunner implements CommandLineRunner {
         String numConfig = numDetails.getFlagMetadata().getString("config");
 
         parseAndLogNumericConfig(numConfig);
+
+        // Track a custom event
+        log.info("=== Tracking Custom Event ===");
+        Map<String, Value> trackAttributes = new HashMap<>();
+        trackAttributes.put("email", new Value("demo@example.com"));
+        trackAttributes.put("trafficType", new Value("user")); // Required by Split SDK
+
+        EvaluationContext trackContext = featureFlagService.createContext(
+            "user-track-demo",
+            trackAttributes
+        );
+
+        MutableTrackingEventDetails trackDetails = new MutableTrackingEventDetails(100.0); // numeric value
+        trackDetails.add("currency", "USD");
+        trackDetails.add("product", "premium-plan");
+        trackDetails.add("quantity", 1);
+
+        featureFlagService.trackEvent("purchase", trackContext, trackDetails);
+        log.info("Custom event 'purchase' tracked successfully");
 
         log.info("=== Feature Flag Demo Complete ===");
     }
