@@ -79,7 +79,6 @@ public class FeatureFlagCommandLineRunner implements CommandLineRunner {
         // Track a custom event
         log.info("=== Tracking Custom Event ===");
         Map<String, Value> trackAttributes = new HashMap<>();
-        trackAttributes.put("email", new Value("demo@example.com"));
         trackAttributes.put("trafficType", new Value("user")); // Required by Split SDK
 
         EvaluationContext trackContext = featureFlagService.createContext(
